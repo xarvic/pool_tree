@@ -3,7 +3,6 @@
 
 pub mod node;
 pub mod tree;
-pub mod iter;
 
 pub mod prelude{
     pub use crate::{
