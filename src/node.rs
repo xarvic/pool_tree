@@ -1,4 +1,4 @@
-use crate::tree::{PoolTree, Element};
+use crate::tree::{Tree, Element};
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
@@ -7,7 +7,7 @@ pub struct NodeTop<'a, T> {
 }
 
 impl<'a, T> NodeTop<'a, T> {
-    pub unsafe fn create(index: u32, buffer: *mut PoolTree<T>) -> Self {
+    pub unsafe fn create(index: u32, buffer: *mut Tree<T>) -> Self {
         NodeTop {
             inner: NodeMut {
                 index,
@@ -43,6 +43,27 @@ impl<'a, T> NodeTop<'a, T> {
             //TODO: remove complete Tree
         }
     }
+
+    pub fn into_child(self, index: u32) -> Result<Self, Self> {
+        unsafe {
+            if let Some(index) = self.raw().childs().get(index as usize) {
+                Ok(NodeTop::create(index.get(), self.buffer))
+            } else {
+                Err(self)
+            }
+        }
+
+    }
+    pub fn into_parent(self) -> Result<Self, Self> {
+        unsafe {
+            if self.index != 0 {
+                Ok(NodeTop::create(self.raw().parent(), self.buffer))
+            } else {
+                Err(self)
+            }
+        }
+    }
+
 }
 
 impl<'a, T> Deref for NodeTop<'a, T> {
@@ -60,18 +81,21 @@ impl<'a, T> DerefMut for NodeTop<'a, T> {
 }
 
 pub struct NodeMut<'a, T> {
-    _p: PhantomData<&'a mut PoolTree<T>>,
-    buffer: *mut PoolTree<T>,
+    _p: PhantomData<&'a mut Tree<T>>,
+    buffer: *mut Tree<T>,
     index: u32
 }
 
 impl<'a, T> NodeMut<'a, T> {
-    pub unsafe fn create(index: u32, buffer: *mut PoolTree<T>) -> Self {
+    pub unsafe fn create(index: u32, buffer: *mut Tree<T>) -> Self {
         NodeMut {
             index,
             buffer,
             _p: PhantomData
         }
+    }
+    pub fn index(&self) -> u32 {
+        self.index
     }
 
     pub fn children(&mut self) -> impl Iterator<Item=NodeMut<T>> {
@@ -114,12 +138,12 @@ impl<'a, T> DerefMut for NodeMut<'a, T> {
 }
 
 pub struct Node<'a, T> {
-    buffer: &'a PoolTree<T>,
+    buffer: &'a Tree<T>,
     index: u32,
 }
 
 impl<'a, T> Node<'a, T> {
-    pub unsafe fn create(index: u32, buffer: &'a PoolTree<T>) -> Self {
+    pub unsafe fn create(index: u32, buffer: &'a Tree<T>) -> Self {
         Node {
             index,
             buffer,
@@ -131,6 +155,9 @@ impl<'a, T> Node<'a, T> {
             self.buffer.get_raw(self.index).childs()
                 .iter().map(move|index|Node::create(index.get(), self.buffer))
         }
+    }
+    pub fn index(&self) -> u32 {
+        self.index
     }
 }
 

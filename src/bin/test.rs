@@ -1,29 +1,19 @@
 use pool_tree::prelude::*;
 
 fn main() {
-    let mut tree = PoolTree::new(7);
+    let mut tree = Tree::new(7);
 
-    **tree.mut_top() *= 2;
+    let mut node = tree.mut_top();
 
-    println!("tree: {}", *tree.top());
+    node.add_child(0);
+    node.add_child(2);
+    node.add_child(4);
+    node.add_child(6);
 
-    tree.mut_top().add_child(10);
-    tree.mut_top().add_child(20);
-    tree.mut_top().add_child(30);
-    tree.mut_top().add_child(40);
+    node = node.into_child(2).unwrap_or_else(|err|panic!());
 
-    println!("- {}", *tree.top());
-    tree.top().children().for_each(|child|println!(" - {}", *child));
+    node.add_child(4);
 
-    tree.mut_top().remove_child(1);
-    tree.mut_top().remove_child(2);
+    println!("tree: {:?}", tree);
 
-    tree.mut_top().add_child(50);
-    tree.mut_top().add_child(60);
-    tree.mut_top().add_child(70);
-
-    println!("- {}", *tree.top());
-    tree.top().children().for_each(|child|println!(" - {}", *child));
-
-    println!("inner: {:?}", tree);
 }

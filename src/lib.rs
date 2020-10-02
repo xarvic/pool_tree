@@ -7,17 +7,17 @@ pub mod tree;
 pub mod prelude{
     pub use crate::{
         node::{Node, NodeMut, NodeTop},
-        tree::PoolTree,
+        tree::Tree,
     };
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::tree::PoolTree;
+    use crate::tree::Tree;
 
     #[test]
     fn test_access() {
-        let mut tree = PoolTree::new(17);
+        let mut tree = Tree::new(17);
 
         assert_eq!(17, *tree.top());
 
@@ -28,7 +28,7 @@ mod tests {
 
     #[test]
     fn test_alloc() {
-        let mut tree = PoolTree::new(17);
+        let mut tree = Tree::new(17);
 
         assert_eq!(17, *tree.top());
 

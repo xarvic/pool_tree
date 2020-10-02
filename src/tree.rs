@@ -83,14 +83,14 @@ impl<T: Debug> Debug for Element<T> {
     }
 }
 
-pub struct PoolTree<T> {
+pub struct Tree<T> {
     buffer: Vec<Element<T>>,
     next_free: Option<NonZeroU32>,
 }
 
-impl<T> PoolTree<T> {
+impl<T> Tree<T> {
     pub fn new(root: T) -> Self {
-        PoolTree{
+        Tree {
             buffer: vec![Element::new(root, 0)],
             next_free: None,
         }
@@ -152,7 +152,7 @@ impl<T> PoolTree<T> {
     }
 }
 
-impl<T: Debug> Debug for PoolTree<T> {
+impl<T: Debug> Debug for Tree<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         self.buffer.fmt(f)
     }
