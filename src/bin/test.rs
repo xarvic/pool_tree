@@ -10,7 +10,7 @@ fn main() {
     node.add_child(4);
     node.add_child(6);
 
-    node = node.into_child(2).unwrap_or_else(|err|panic!());
+    node = node.into_child(2).unwrap_or_else(|_|panic!());
 
     node.add_child(4);
 

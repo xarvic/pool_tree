@@ -2,30 +2,30 @@ use crate::tree::{Tree, Element};
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
-pub struct NodeTop<'a, T> {
-    inner: NodeMut<'a, T>,
+pub struct RefUniq<'a, T> {
+    inner: RefMut<'a, T>,
 }
 
-impl<'a, T> NodeTop<'a, T> {
+impl<'a, T> RefUniq<'a, T> {
     pub unsafe fn create(index: u32, buffer: *mut Tree<T>) -> Self {
-        NodeTop {
-            inner: NodeMut {
+        RefUniq {
+            inner: RefMut {
                 index,
                 buffer,
                 _p: PhantomData
             }
         }
     }
-    pub fn inner(self) -> NodeMut<'a, T> {
+    pub fn inner(self) -> RefMut<'a, T> {
         self.inner
     }
 
-    pub fn add_child(&mut self, value: T) -> NodeMut<T> {
+    pub fn add_child(&mut self, value: T) -> RefMut<T> {
         unsafe {
             let index = (*self.buffer).alloc_for(value, self.index);
             self.raw_mut().childs_mut().push(index);
 
-            NodeMut::create(index.get(), self.buffer)
+            RefMut::create(index.get(), self.buffer)
         }
     }
 
@@ -47,7 +47,7 @@ impl<'a, T> NodeTop<'a, T> {
     pub fn into_child(self, index: u32) -> Result<Self, Self> {
         unsafe {
             if let Some(index) = self.raw().childs().get(index as usize) {
-                Ok(NodeTop::create(index.get(), self.buffer))
+                Ok(RefUniq::create(index.get(), self.buffer))
             } else {
                 Err(self)
             }
@@ -57,7 +57,7 @@ impl<'a, T> NodeTop<'a, T> {
     pub fn into_parent(self) -> Result<Self, Self> {
         unsafe {
             if self.index != 0 {
-                Ok(NodeTop::create(self.raw().parent(), self.buffer))
+                Ok(RefUniq::create(self.raw().parent(), self.buffer))
             } else {
                 Err(self)
             }
@@ -66,29 +66,29 @@ impl<'a, T> NodeTop<'a, T> {
 
 }
 
-impl<'a, T> Deref for NodeTop<'a, T> {
-    type Target = NodeMut<'a, T>;
+impl<'a, T> Deref for RefUniq<'a, T> {
+    type Target = RefMut<'a, T>;
 
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
 }
 
-impl<'a, T> DerefMut for NodeTop<'a, T> {
+impl<'a, T> DerefMut for RefUniq<'a, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }
 }
 
-pub struct NodeMut<'a, T> {
+pub struct RefMut<'a, T> {
     _p: PhantomData<&'a mut Tree<T>>,
     buffer: *mut Tree<T>,
     index: u32
 }
 
-impl<'a, T> NodeMut<'a, T> {
+impl<'a, T> RefMut<'a, T> {
     pub unsafe fn create(index: u32, buffer: *mut Tree<T>) -> Self {
-        NodeMut {
+        RefMut {
             index,
             buffer,
             _p: PhantomData
@@ -98,11 +98,11 @@ impl<'a, T> NodeMut<'a, T> {
         self.index
     }
 
-    pub fn children(&mut self) -> impl Iterator<Item=NodeMut<T>> {
+    pub fn children(&mut self) -> impl Iterator<Item=RefMut<T>> {
         let buffer = self.buffer;
         unsafe {
             self.raw().childs()
-                .iter().map(move|index|NodeMut::create(index.get(), buffer))
+                .iter().map(move|index| RefMut::create(index.get(), buffer))
         }
     }
     unsafe fn raw(&self) -> &Element<T> {
@@ -119,7 +119,7 @@ impl<'a, T> NodeMut<'a, T> {
     }
 }
 
-impl<'a, T> Deref for NodeMut<'a, T> {
+impl<'a, T> Deref for RefMut<'a, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -129,7 +129,7 @@ impl<'a, T> Deref for NodeMut<'a, T> {
     }
 }
 
-impl<'a, T> DerefMut for NodeMut<'a, T> {
+impl<'a, T> DerefMut for RefMut<'a, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe {
             self.raw_mut().get_value_mut()
@@ -137,23 +137,23 @@ impl<'a, T> DerefMut for NodeMut<'a, T> {
     }
 }
 
-pub struct Node<'a, T> {
+pub struct Ref<'a, T> {
     buffer: &'a Tree<T>,
     index: u32,
 }
 
-impl<'a, T> Node<'a, T> {
+impl<'a, T> Ref<'a, T> {
     pub unsafe fn create(index: u32, buffer: &'a Tree<T>) -> Self {
-        Node {
+        Ref {
             index,
             buffer,
         }
     }
 
-    pub fn children(&self) -> impl Iterator<Item = Node<T>> {
+    pub fn children(&self) -> impl Iterator<Item = Ref<T>> {
         unsafe {
             self.buffer.get_raw(self.index).childs()
-                .iter().map(move|index|Node::create(index.get(), self.buffer))
+                .iter().map(move|index| Ref::create(index.get(), self.buffer))
         }
     }
     pub fn index(&self) -> u32 {
@@ -161,7 +161,7 @@ impl<'a, T> Node<'a, T> {
     }
 }
 
-impl<'a, T> Deref for Node<'a, T> {
+impl<'a, T> Deref for Ref<'a, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {

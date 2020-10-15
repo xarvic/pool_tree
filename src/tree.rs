@@ -1,4 +1,4 @@
-use crate::node::{NodeTop, Node};
+use crate::node::{RefUniq, Ref};
 use std::num::NonZeroU32;
 use std::mem::replace;
 use std::fmt::{Debug, Formatter};
@@ -122,32 +122,32 @@ impl<T> Tree<T> {
         self.buffer.get_unchecked_mut(index as usize)
     }
 
-    pub unsafe fn get_unchecked(&self, index: u32) -> Node<T> {
-        Node::create(index, self as _)
+    pub unsafe fn get_unchecked(&self, index: u32) -> Ref<T> {
+        Ref::create(index, self as _)
     }
 
-    pub fn get_index(&self, index: u32) -> Option<Node<T>> {
+    pub fn get_index(&self, index: u32) -> Option<Ref<T>> {
         if self.buffer.get(index as usize).map_or(false, |element|element.is_used()) {
             Some(unsafe {self.get_unchecked(index)})
         } else {
             None
         }
     }
-    pub fn top(&self) -> Node<T> {
+    pub fn top(&self) -> Ref<T> {
         unsafe {self.get_unchecked(0) }
     }
 
-    pub unsafe fn get_unchecked_mut(&mut self, index: u32) -> NodeTop<T> {
-        NodeTop::create(index, self as _)
+    pub unsafe fn get_unchecked_mut(&mut self, index: u32) -> RefUniq<T> {
+        RefUniq::create(index, self as _)
     }
-    pub fn get_index_mut(&mut self, index: u32) -> Option<NodeTop<T>> {
+    pub fn get_index_mut(&mut self, index: u32) -> Option<RefUniq<T>> {
         if self.buffer.get(index as usize).map_or(false, |element|element.is_used()) {
             Some(unsafe {self.get_unchecked_mut(index)})
         } else {
             None
         }
     }
-    pub fn mut_top(&mut self) -> NodeTop<T> {
+    pub fn mut_top(&mut self) -> RefUniq<T> {
         unsafe {self.get_unchecked_mut(0) }
     }
 }

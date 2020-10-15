@@ -6,7 +6,7 @@ pub mod tree;
 
 pub mod prelude{
     pub use crate::{
-        node::{Node, NodeMut, NodeTop},
+        node::{Ref, RefMut, RefUniq},
         tree::Tree,
     };
 }
