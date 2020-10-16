@@ -2,18 +2,38 @@ use crate::tree::{Tree, Element};
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut, Receiver};
 
+/// RefUniq is an unique Reference to node of the Tree.
+/// it has all capabilities of RefMut but additionally can change the structure of the Tree (adding
+/// and removing childs of the given Node).
 pub struct RefUniq<'a, T> {
     inner: RefMut<'a, T>,
 }
 
 impl<'a, T> RefUniq<'a, T> {
+    /// create creates a new UniqRef for the Tree buffer to the node at index
+    ///
+    /// #Safety
+    /// The caller must ensure, that no other Ref to the same Tree is accesible during the Lifetime
+    /// of this Ref.
+    ///
+    /// #Example
+    /// ```
+    /// use pool_tree::node::RefUniq;
+    /// pub fn first_child_or_default(value: RefUniq<u32>) -> RefUniq<u32> {
+    ///
+    /// }
+    /// ```
     pub unsafe fn create(index: u32, buffer: *mut Tree<T>) -> Self {
         RefUniq {
-            inner: RefMut {
-                index,
-                buffer,
-                _p: PhantomData
-            }
+            inner: RefMut::create(index, buffer)
+        }
+    }
+
+    /// Convenience Method to create a RefUniq from a RefMut to the same node
+    /// see [create]
+    pub unsafe fn from_inner(inner: RefMut<'a, T>) -> Self {
+        RefUniq{
+            inner
         }
     }
     pub fn inner(self) -> RefMut<'a, T> {
@@ -31,16 +51,39 @@ impl<'a, T> RefUniq<'a, T> {
 
     pub fn remove_child(&mut self, index: u32) -> T {
         unsafe {
+            let buffer = self.buffer;
             let childs = self.raw_mut().children_mut();
             if childs.len() > index as usize {
 
                 let id = childs.remove(index as usize);
-                (&mut*self.buffer).free(id)
 
+                RefUniq::create(id.get(), buffer).clear_children();
+
+                (&mut*self.buffer).free(id)
             } else {
                 panic!("Index out of Bounds!")
             }
-            //TODO: remove complete Tree
+        }
+    }
+
+    pub fn clear_children(&mut self) {
+        unsafe{
+            let buffer = self.buffer;
+
+            for child_index in self.raw_mut().childs.drain(..) {
+
+                RefUniq::create(child_index.get(), buffer).clear_children();
+
+                (&mut*self.buffer).free(child_index)
+            }
+        }
+    }
+
+    pub fn create_sub_tree<G: Iterator<Item=(T, G)>>(&mut self, childs_generator: G) {
+        for (value, grand_childs) in childs_generator {
+            let child = self.add_child(value);
+
+            unsafe { RefUniq::from_inner(child).create_sub_tree(grand_childs); }
         }
     }
 
@@ -52,8 +95,12 @@ impl<'a, T> RefUniq<'a, T> {
                 Err(self)
             }
         }
-
     }
+
+    pub fn into_new_child(mut self, value: T) -> Self {
+        unsafe { RefUniq::from_inner(self.add_child(value)) }
+    }
+
     pub fn into_parent(self) -> Result<Self, Self> {
         unsafe {
             if self.index != 0 {
