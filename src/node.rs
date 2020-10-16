@@ -23,7 +23,7 @@ impl<'a, T> RefUniq<'a, T> {
     pub fn add_child(&mut self, value: T) -> RefMut<T> {
         unsafe {
             let index = (*self.buffer).alloc_for(value, self.index);
-            self.raw_mut().childs_mut().push(index);
+            self.raw_mut().children_mut().push(index);
 
             RefMut::create(index.get(), self.buffer)
         }
@@ -31,7 +31,7 @@ impl<'a, T> RefUniq<'a, T> {
 
     pub fn remove_child(&mut self, index: u32) -> T {
         unsafe {
-            let childs = self.raw_mut().childs_mut();
+            let childs = self.raw_mut().children_mut();
             if childs.len() > index as usize {
 
                 let id = childs.remove(index as usize);

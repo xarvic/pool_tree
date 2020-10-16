@@ -13,7 +13,10 @@ fn main() {
     node = node.into_child(2).unwrap_or_else(|_|panic!());
 
     node.add_child(4);
+    node.add_child(4);
+    node.add_child(4);
+    node.add_child(4);
 
-    println!("tree: {:?}", tree);
+    println!("tree: {:#?}", tree);
 
 }
