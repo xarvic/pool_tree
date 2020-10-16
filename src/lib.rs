@@ -1,4 +1,4 @@
-#![feature(arbitrary_self_types)]
+#![feature(receiver_trait)]
 #![allow(dead_code)]
 
 pub mod node;

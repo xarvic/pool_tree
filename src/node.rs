@@ -1,6 +1,6 @@
 use crate::tree::{Tree, Element};
 use std::marker::PhantomData;
-use std::ops::{Deref, DerefMut};
+use std::ops::{Deref, DerefMut, Receiver};
 
 pub struct RefUniq<'a, T> {
     inner: RefMut<'a, T>,
@@ -66,6 +66,8 @@ impl<'a, T> RefUniq<'a, T> {
 
 }
 
+impl<'a, T> Receiver for RefUniq<'a, T>{}
+
 impl<'a, T> Deref for RefUniq<'a, T> {
     type Target = RefMut<'a, T>;
 
@@ -129,6 +131,8 @@ impl<'a, T> Deref for RefMut<'a, T> {
     }
 }
 
+impl<'a, T> Receiver for RefUniq<'a, T>{}
+
 impl<'a, T> DerefMut for RefMut<'a, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe {
@@ -160,6 +164,8 @@ impl<'a, T> Ref<'a, T> {
         self.index
     }
 }
+
+impl<'a, T> Receiver for RefUniq<'a, T>{}
 
 impl<'a, T> Deref for Ref<'a, T> {
     type Target = T;
