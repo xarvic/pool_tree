@@ -1,6 +1,6 @@
 use std::ops::{Receiver, Deref};
 use smallvec::alloc::fmt::{Display, Formatter};
-use crate::tree::Tree;
+use crate::tree::{Tree, Element};
 use crate::iter::ChildIter;
 
 pub struct Ref<'a, T> {
@@ -15,39 +15,55 @@ impl<'a, T> Ref<'a, T> {
             buffer,
         }
     }
-
-    pub fn children(&self) -> ChildIter<T, Self> {
-        unsafe {
-            ChildIter::new(self.buffer as *const Tree<T> as *mut Tree<T>, self.buffer.get_raw(self.index).childs())
-        }
+    unsafe fn raw(&self) -> &Element<T> {
+        &self.buffer.get_raw(self.index)
     }
-    pub fn index(&self) -> u32 {
-        self.index
-    }
-
-
-}
-
-impl<'a, T> TreeRef<T> for Ref<'a, T> {
-    unsafe fn create(buffer: *mut Tree<T>, index: u32) -> Self {
-        Self::create(index, &*buffer)
-    }
-}
-
-pub trait TreeRef<T> {
-    unsafe fn create(buffer: *mut Tree<T>, index: u32) -> Self;
 }
 
 impl<'a, T> Receiver for Ref<'a, T>{}
+
+impl<'a, T> TreeRef for Ref<'a, T> {
+    type Type = T;
+    type Children = Self;
+
+    unsafe fn create(buffer: *const Tree<T>, index: u32) -> Self {
+        Self::create(index, &*buffer)
+    }
+
+    fn index(&self) -> u32 {
+        self.index
+    }
+
+    fn children(&self) -> ChildIter<Self::Type, Self::Children> {
+        let buffer = self.buffer;
+        unsafe {
+            ChildIter::new(buffer, self.raw().childs())
+        }
+    }
+
+    fn children_count(&self) -> u32 {
+        unsafe { self.raw() }.childs().len() as u32
+    }
+}
 
 impl<'a, T> Deref for Ref<'a, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
         unsafe {
-            self.buffer.get_raw(self.index).get_value()
+            self.raw().get_value()
         }
     }
+}
+
+pub trait TreeRef {
+    type Type;
+    type Children: TreeRef<Type=Self::Type>;
+    unsafe fn create(buffer: *const Tree<Self::Type>, index: u32) -> Self;
+
+    fn index(&self) -> u32;
+    fn children(&self) -> ChildIter<Self::Type, Self::Children>;
+    fn children_count(&self) -> u32;
 }
 
 impl<'a, T: Display> Display for Ref<'a, T> {
@@ -67,3 +83,5 @@ impl<'a, T: Display> Display for Ref<'a, T> {
         Ok(())
     }
 }
+
+//TODO: impl Eq and Debug, Display, ToOwned for TreeRef
