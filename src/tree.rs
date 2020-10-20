@@ -1,9 +1,11 @@
-use crate::node::{RefUniq, Ref};
 use std::num::NonZeroU32;
 use std::mem::replace;
 use std::fmt::{Debug, Formatter};
 use smallvec::SmallVec;
 use std::hint::unreachable_unchecked;
+use smallvec::alloc::fmt::Display;
+use crate::reference::Ref;
+use crate::ref_unique::RefUniq;
 
 /// Element stores the value of a Node as well as the indices of its parent and its children.
 /// The value field uses an Option<T> to avoid an extra field used. parent_next_is the index of the
@@ -211,7 +213,7 @@ impl<T> Tree<T> {
     /// #Panics
     /// This method panics if the given index is unused, or outside the uffers range
     pub(crate) unsafe fn free(&mut self, index: NonZeroU32) -> T {
-        assert!(index < self.buffer.len());
+        assert!(index.get() < self.buffer.len() as u32);
 
         let previous_free = replace(&mut self.next_free, Some(index));
         let element = self.get_raw_mut(index.get());
@@ -288,5 +290,11 @@ impl<T> Tree<T> {
 impl<T: Debug> Debug for Tree<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         self.buffer.fmt(f)
+    }
+}
+
+impl<T: Display> Display for Tree<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.top().fmt(f)
     }
 }

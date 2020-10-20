@@ -1,4 +1,4 @@
-use pool_tree::prelude::*;
+use pool_tree::tree::Tree;
 
 fn main() {
     let mut tree = Tree::new(7);
@@ -18,5 +18,6 @@ fn main() {
     node.add_child(4);
 
     println!("tree: {:#?}", tree);
+    println!("tree: {}", tree);
 
 }

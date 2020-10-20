@@ -3,13 +3,10 @@
 
 pub mod node;
 pub mod tree;
-
-pub mod prelude{
-    pub use crate::{
-        node::{Ref, RefMut, RefUniq},
-        tree::Tree,
-    };
-}
+pub mod ref_unique;
+pub mod ref_mut;
+pub mod reference;
+pub mod ref_global;
 
 #[cfg(test)]
 mod tests {
