@@ -1,5 +1,3 @@
-#![feature(arbitrary_self_types)]
-
 use std::mem::size_of;
 use std::num::NonZeroU32;
 use pool_tree::tree::Element;
