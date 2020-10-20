@@ -1,6 +1,8 @@
 use std::ops::{Receiver, Deref, DerefMut};
-use crate::ref_mut::RefMut;
+use crate::ref_mut::{RefMut, TreeRefMut};
 use crate::tree::Tree;
+use crate::reference::{TreeRef, Ref};
+use crate::iter::ChildIter;
 
 /// RefUniq is an unique Reference to node of the Tree.
 /// it has all capabilities of RefMut but additionally can change the structure of the Tree (adding
@@ -124,5 +126,40 @@ impl<'a, T> Deref for RefUniq<'a, T> {
 impl<'a, T> DerefMut for RefUniq<'a, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
+    }
+}
+
+impl<'a, T: 'static> TreeRefMut for RefUniq<'a, T> {
+    fn children_mut(&mut self) -> ChildIter<Self::Type, RefMut<Self::Type>> {
+        self.inner.children_mut()
+    }
+
+    fn both(&mut self) -> (&mut Self::Type, ChildIter<Self::Type, RefMut<Self::Type>>) {
+        self.inner.both()
+    }
+}
+
+impl<'a, T: 'static> TreeRef for RefUniq<'a, T> {
+    type Type = T;
+    type Children<'b> = Ref<'b, T>;
+
+    unsafe fn create(buffer: *const Tree<Self::Type>, index: u32) -> Self {
+        Self::create(index, buffer as *mut Tree<T>)
+    }
+
+    fn index(&self) -> u32 {
+        self.inner.index
+    }
+
+    fn children<'b>(&'b self) -> ChildIter<'b, Self::Type, Self::Children<'b>> {
+        self.inner.children()
+    }
+
+    fn children_count(&self) -> u32 {
+        self.inner.children_count()
+    }
+
+    fn get_ref<'b>(&'b self) -> Ref<'b, Self::Type> {
+        self.inner.get_ref()
     }
 }

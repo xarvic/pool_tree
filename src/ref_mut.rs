@@ -18,17 +18,6 @@ impl<'a, T> RefMut<'a, T> {
             _p: PhantomData
         }
     }
-    pub fn index(&self) -> u32 {
-        self.index
-    }
-
-    pub fn children(&mut self) -> impl Iterator<Item=RefMut<T>> {
-        let buffer = self.buffer;
-        unsafe {
-            self.raw().childs()
-                .iter().map(move|index| RefMut::create(index.get(), buffer))
-        }
-    }
     pub(crate) unsafe fn raw(&self) -> &Element<T> {
         (& *self.buffer).get_raw(self.index)
     }
@@ -109,7 +98,7 @@ impl<'a, T: 'static> TreeRefMut for RefMut<'a, T> {
     }
 }
 
-trait TreeRefMut: TreeRef {
+pub trait TreeRefMut: TreeRef {
     fn children_mut(&mut self) -> ChildIter<Self::Type, RefMut<Self::Type>>;
     fn both(&mut self) -> (&mut Self::Type, ChildIter<Self::Type, RefMut<Self::Type>>);
 }
