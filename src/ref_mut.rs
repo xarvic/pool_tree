@@ -71,6 +71,13 @@ impl<'a, T: 'static> TreeRef for RefMut<'a, T> {
         }
     }
 
+    fn get_child<'b>(&'b self, index: u32) -> Self::Children<'b> {
+        unsafe {
+            let index = *self.raw().childs().get(index as usize).expect("index out of bounds!");
+            Ref::create(index.get(), &*self.buffer)
+        }
+    }
+
     fn children_count(&self) -> u32 {
         unsafe { self.raw() }.childs().len() as u32
     }
@@ -88,6 +95,13 @@ impl<'a, T: 'static> TreeRefMut for RefMut<'a, T> {
         }
     }
 
+    fn get_child_mut(&mut self, index: u32) -> RefMut<T> {
+        unsafe {
+            let index = *self.raw().childs().get(index as usize).expect("index out of bounds!");
+            RefMut::create(index.get(), self.buffer)
+        }
+    }
+
     fn both(&mut self) -> (&mut Self::Type, ChildIter<Self::Type, RefMut<Self::Type>>) {
         unsafe {
             let this = self as *mut Self;
@@ -100,5 +114,6 @@ impl<'a, T: 'static> TreeRefMut for RefMut<'a, T> {
 
 pub trait TreeRefMut: TreeRef {
     fn children_mut(&mut self) -> ChildIter<Self::Type, RefMut<Self::Type>>;
+    fn get_child_mut(&mut self, index: u32) -> RefMut<Self::Type>;
     fn both(&mut self) -> (&mut Self::Type, ChildIter<Self::Type, RefMut<Self::Type>>);
 }

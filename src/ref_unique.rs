@@ -134,6 +134,10 @@ impl<'a, T: 'static> TreeRefMut for RefUniq<'a, T> {
         self.inner.children_mut()
     }
 
+    fn get_child_mut(&mut self, index: u32) -> RefMut<Self::Type> {
+        self.inner.get_child_mut(index)
+    }
+
     fn both(&mut self) -> (&mut Self::Type, ChildIter<Self::Type, RefMut<Self::Type>>) {
         self.inner.both()
     }
@@ -153,6 +157,10 @@ impl<'a, T: 'static> TreeRef for RefUniq<'a, T> {
 
     fn children<'b>(&'b self) -> ChildIter<'b, Self::Type, Self::Children<'b>> {
         self.inner.children()
+    }
+
+    fn get_child<'b>(&'b self, index: u32) -> Self::Children<'b> {
+        self.inner.get_child(index)
     }
 
     fn children_count(&self) -> u32 {

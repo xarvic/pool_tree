@@ -41,6 +41,13 @@ impl<'a, T: 'static> TreeRef for Ref<'a, T> {
         }
     }
 
+    fn get_child<'b>(&'b self, index: u32) -> Self::Children<'b> {
+        unsafe {
+            let index = *self.raw().childs().get(index as usize).expect("index out of bounds!");
+            Ref::create(index.get(), self.buffer)
+        }
+    }
+
     fn children_count(&self) -> u32 {
         unsafe { self.raw() }.childs().len() as u32
     }
@@ -66,7 +73,11 @@ pub trait TreeRef {
     unsafe fn create(buffer: *const Tree<Self::Type>, index: u32) -> Self;
 
     fn index(&self) -> u32;
+
     fn children<'b>(&'b self) -> ChildIter<'b, Self::Type, Self::Children<'b>>;
+
+    fn get_child<'b>(&'b self, index: u32) -> Self::Children<'b>;
+
     fn children_count(&self) -> u32;
 
     fn get_ref<'b>(&'b self) -> Ref<'b, Self::Type>;
