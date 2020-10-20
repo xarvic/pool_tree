@@ -1,6 +1,7 @@
 use std::ops::{Receiver, Deref};
 use smallvec::alloc::fmt::{Display, Formatter};
 use crate::tree::Tree;
+use crate::iter::ChildIter;
 
 pub struct Ref<'a, T> {
     buffer: &'a Tree<T>,
@@ -15,10 +16,9 @@ impl<'a, T> Ref<'a, T> {
         }
     }
 
-    pub fn children(&self) -> impl Iterator<Item = Ref<T>> {
+    pub fn children(&self) -> ChildIter<T, Self> {
         unsafe {
-            self.buffer.get_raw(self.index).childs()
-                .iter().map(move|index| Ref::create(index.get(), self.buffer))
+            ChildIter::new(self.buffer as *const Tree<T> as *mut Tree<T>, self.buffer.get_raw(self.index).childs())
         }
     }
     pub fn index(&self) -> u32 {
@@ -26,6 +26,16 @@ impl<'a, T> Ref<'a, T> {
     }
 
 
+}
+
+impl<'a, T> TreeRef<T> for Ref<'a, T> {
+    unsafe fn create(buffer: *mut Tree<T>, index: u32) -> Self {
+        Self::create(index, &*buffer)
+    }
+}
+
+pub trait TreeRef<T> {
+    unsafe fn create(buffer: *mut Tree<T>, index: u32) -> Self;
 }
 
 impl<'a, T> Receiver for Ref<'a, T>{}

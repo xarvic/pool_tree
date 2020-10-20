@@ -7,6 +7,7 @@ pub mod ref_unique;
 pub mod ref_mut;
 pub mod reference;
 pub mod ref_global;
+mod iter;
 
 #[cfg(test)]
 mod tests {
