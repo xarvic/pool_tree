@@ -287,13 +287,13 @@ impl<T> Tree<T> {
     }
 }
 
-impl<T: Debug> Debug for Tree<T> {
+impl<T: Debug + 'static> Debug for Tree<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         self.buffer.fmt(f)
     }
 }
 
-impl<T: Display> Display for Tree<T> {
+impl<T: Display + 'static> Display for Tree<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         self.top().fmt(f)
     }

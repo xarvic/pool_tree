@@ -1,6 +1,8 @@
 use std::ops::{Receiver, DerefMut, Deref};
 use crate::tree::{Element, Tree};
 use std::marker::PhantomData;
+use crate::reference::{TreeRef, Ref};
+use crate::iter::ChildIter;
 
 pub struct RefMut<'a, T> {
     _p: PhantomData<&'a mut Tree<T>>,
@@ -59,4 +61,55 @@ impl<'a, T> DerefMut for RefMut<'a, T> {
             self.raw_mut().get_value_mut()
         }
     }
+}
+
+impl<'a, T: 'static> TreeRef for RefMut<'a, T> {
+    type Type = T;
+    type Children<'b> = Ref<'b, T>;
+
+    unsafe fn create(buffer: *const Tree<Self::Type>, index: u32) -> Self {
+        Self::create(index, buffer as *mut Tree<Self::Type>)
+    }
+
+    fn index(&self) -> u32 {
+        self.index
+    }
+
+    fn children<'b>(&'b self) -> ChildIter<'b, Self::Type, Self::Children<'b>> {
+        let buffer = self.buffer;
+        unsafe {
+            ChildIter::new(buffer, self.raw().childs())
+        }
+    }
+
+    fn children_count(&self) -> u32 {
+        unsafe { self.raw() }.childs().len() as u32
+    }
+
+    fn get_ref(&self) -> Ref<Self::Type> {
+        unsafe {Ref::create(self.index, &*self.buffer)}
+    }
+}
+
+impl<'a, T: 'static> TreeRefMut for RefMut<'a, T> {
+    fn children_mut(&mut self) -> ChildIter<Self::Type, RefMut<Self::Type>> {
+        let buffer = self.buffer;
+        unsafe {
+            ChildIter::new(buffer, self.raw().childs())
+        }
+    }
+
+    fn both(&mut self) -> (&mut Self::Type, ChildIter<Self::Type, RefMut<Self::Type>>) {
+        unsafe {
+            let this = self as *mut Self;
+            let value = (&mut *this).raw_mut().get_value_mut();
+
+            (value, self.children_mut())
+        }
+    }
+}
+
+trait TreeRefMut: TreeRef {
+    fn children_mut(&mut self) -> ChildIter<Self::Type, RefMut<Self::Type>>;
+    fn both(&mut self) -> (&mut Self::Type, ChildIter<Self::Type, RefMut<Self::Type>>);
 }

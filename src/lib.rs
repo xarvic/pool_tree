@@ -1,5 +1,7 @@
 #![feature(receiver_trait)]
+#![feature(generic_associated_types)]
 #![allow(dead_code)]
+#![allow(incomplete_features)]
 
 pub mod node;
 pub mod tree;

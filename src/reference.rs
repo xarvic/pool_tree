@@ -22,9 +22,9 @@ impl<'a, T> Ref<'a, T> {
 
 impl<'a, T> Receiver for Ref<'a, T>{}
 
-impl<'a, T> TreeRef for Ref<'a, T> {
+impl<'a, T: 'static> TreeRef for Ref<'a, T> {
     type Type = T;
-    type Children = Self;
+    type Children<'b> = Ref<'b, T>;
 
     unsafe fn create(buffer: *const Tree<T>, index: u32) -> Self {
         Self::create(index, &*buffer)
@@ -34,7 +34,7 @@ impl<'a, T> TreeRef for Ref<'a, T> {
         self.index
     }
 
-    fn children(&self) -> ChildIter<Self::Type, Self::Children> {
+    fn children<'c>(&'c self) -> ChildIter<'c, Self::Type, Self::Children<'c>> {
         let buffer = self.buffer;
         unsafe {
             ChildIter::new(buffer, self.raw().childs())
@@ -43,6 +43,10 @@ impl<'a, T> TreeRef for Ref<'a, T> {
 
     fn children_count(&self) -> u32 {
         unsafe { self.raw() }.childs().len() as u32
+    }
+
+    fn get_ref(&self) -> Ref<Self::Type> {
+        unsafe { Self::create(self.index, self.buffer) }
     }
 }
 
@@ -57,16 +61,18 @@ impl<'a, T> Deref for Ref<'a, T> {
 }
 
 pub trait TreeRef {
-    type Type;
-    type Children: TreeRef<Type=Self::Type>;
+    type Type: 'static;
+    type Children<'a>: TreeRef<Type=Self::Type>;
     unsafe fn create(buffer: *const Tree<Self::Type>, index: u32) -> Self;
 
     fn index(&self) -> u32;
-    fn children(&self) -> ChildIter<Self::Type, Self::Children>;
+    fn children<'b>(&'b self) -> ChildIter<'b, Self::Type, Self::Children<'b>>;
     fn children_count(&self) -> u32;
+
+    fn get_ref<'b>(&'b self) -> Ref<'b, Self::Type>;
 }
 
-impl<'a, T: Display> Display for Ref<'a, T> {
+impl<'a, T: Display + 'static> Display for Ref<'a, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         self.deref().fmt(f)?;
         let mut iter = self.children();
