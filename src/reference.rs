@@ -8,7 +8,7 @@ pub struct Ref<'a, T> {
     index: u32,
 }
 
-impl<'a, T> Ref<'a, T> {
+impl<'a, T: 'static> Ref<'a, T> {
     pub unsafe fn create(index: u32, buffer: &'a Tree<T>) -> Self {
         Ref {
             index,
@@ -57,7 +57,7 @@ impl<'a, T: 'static> TreeRef for Ref<'a, T> {
     }
 }
 
-impl<'a, T> Deref for Ref<'a, T> {
+impl<'a, T: 'static> Deref for Ref<'a, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {

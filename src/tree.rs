@@ -178,7 +178,7 @@ pub struct Tree<T> {
     next_free: Option<NonZeroU32>,
 }
 
-impl<T> Tree<T> {
+impl<T: 'static> Tree<T> {
 
     ///creates a new Tree with the given root Node
     #[inline]

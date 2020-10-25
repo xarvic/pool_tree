@@ -1,6 +1,6 @@
 use std::ops::{Receiver, Deref, DerefMut};
 use crate::ref_mut::{RefMut, TreeRefMut};
-use crate::tree::Tree;
+use crate::tree::{Tree, Element};
 use crate::reference::{TreeRef, Ref};
 use crate::iter::ChildIter;
 use crate::children_mut::ChildrenMut;
@@ -13,7 +13,7 @@ pub struct RefUniq<'a, T> {
     inner: ChildUniq<'a, T>,
 }
 
-impl<'a, T> RefUniq<'a, T> {
+impl<'a, T: 'static> RefUniq<'a, T> {
     /// create creates a new UniqRef for the Tree buffer to the node at index
     ///
     /// #Safety
@@ -50,31 +50,54 @@ impl<'a, T> RefUniq<'a, T> {
         self.inner.remove_child(index)
     }
 
+    pub fn get_child_unique(&mut self, index: u32) -> ChildUniq<T> {
+        self.inner.get_child_unique(index)
+    }
+
     pub fn into_parent(self) -> Result<Self, Self> {
         unsafe {
-            if self.index != 0 {
-                Ok(RefUniq::create(self.raw().parent(), self.buffer))
+            if self.index() != 0 {
+                Ok(RefUniq::create(self.raw().parent(), self.buffer()))
             } else {
                 Err(self)
             }
         }
     }
 
+    pub unsafe fn raw(&self) -> &Element<T> {
+        self.inner.raw()
+    }
+
+    pub unsafe fn raw_mut(&mut self) -> &mut Element<T> {
+        self.inner.raw_mut()
+    }
+
+    pub unsafe fn raw_index(&self, index: u32) -> &Element<T> {
+        self.inner.raw_index(index)
+    }
+
+    pub unsafe fn raw_index_mut(&mut self, index: u32) -> &mut Element<T> {
+        self.inner.raw_index_mut(index)
+    }
+    pub(crate) fn buffer(&self) -> *mut Tree<T> {
+        self.inner.buffer()
+    }
+
 }
 
 impl<'a, T> Receiver for RefUniq<'a, T>{}
 
-impl<'a, T> Deref for RefUniq<'a, T> {
-    type Target = RefMut<'a, T>;
+impl<'a, T: 'static> Deref for RefUniq<'a, T> {
+    type Target = T;
 
     fn deref(&self) -> &Self::Target {
-        &self.inner
+        &*self.inner
     }
 }
 
-impl<'a, T> DerefMut for RefUniq<'a, T> {
+impl<'a, T: 'static> DerefMut for RefUniq<'a, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
+        &mut *self.inner
     }
 }
 
@@ -101,7 +124,7 @@ impl<'a, T: 'static> TreeRef for RefUniq<'a, T> {
     }
 
     fn index(&self) -> u32 {
-        self.inner.index
+        self.inner.index()
     }
 
     fn children<'b>(&'b self) -> ChildIter<'b, Self::Type, Self::Children<'b>> {
