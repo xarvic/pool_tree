@@ -23,10 +23,7 @@ impl<'a, T: 'static> ChildUniq<'a, T> {
         }
     }
     pub fn get_children_unique(&mut self) -> ChildrenUnique<T> {
-        unsafe {
-            let indices = self.inner.raw().childs();
-            ChildrenUnique::create(self.inner.buffer, indices)
-        }
+        ChildrenUnique::create(self.id())
     }
     pub fn get_both_unique(&mut self) -> (&mut T, ChildrenUnique<T>) {
         unsafe {
@@ -92,6 +89,11 @@ impl<'a, T: 'static> ChildUniq<'a, T> {
         self.inner.buffer
     }
 
+    pub fn id(&mut self) -> ChildUniq<T> {
+        ChildUniq{
+            inner: self.inner.id(),
+        }
+    }
 }
 
 impl<'a, T: 'static> Deref for ChildUniq<'a, T> {

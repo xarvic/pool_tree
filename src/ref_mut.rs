@@ -31,6 +31,14 @@ impl<'a, T: 'static> RefMut<'a, T> {
     pub(crate) unsafe fn raw_index_mut(&mut self, index: u32) -> &mut Element<T> {
         (&mut *self.buffer).get_raw_mut(index)
     }
+
+    pub fn id(&mut self) -> RefMut<T> {
+        RefMut{
+            _p: Default::default(),
+            buffer: self.buffer,
+            index: self.index,
+        }
+    }
 }
 
 impl<'a, T: 'static> Deref for RefMut<'a, T> {
