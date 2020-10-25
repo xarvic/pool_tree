@@ -3,6 +3,7 @@ use crate::ref_mut::{RefMut, TreeRefMut};
 use crate::tree::Tree;
 use crate::reference::{TreeRef, Ref};
 use crate::iter::ChildIter;
+use crate::children_mut::ChildrenMut;
 
 /// RefUniq is an unique Reference to node of the Tree.
 /// it has all capabilities of RefMut but additionally can change the structure of the Tree (adding
@@ -130,7 +131,7 @@ impl<'a, T> DerefMut for RefUniq<'a, T> {
 }
 
 impl<'a, T: 'static> TreeRefMut for RefUniq<'a, T> {
-    fn children_mut(&mut self) -> ChildIter<Self::Type, RefMut<Self::Type>> {
+    fn children_mut(&mut self) -> ChildrenMut<T> {
         self.inner.children_mut()
     }
 
@@ -138,7 +139,7 @@ impl<'a, T: 'static> TreeRefMut for RefUniq<'a, T> {
         self.inner.get_child_mut(index)
     }
 
-    fn both(&mut self) -> (&mut Self::Type, ChildIter<Self::Type, RefMut<Self::Type>>) {
+    fn both(&mut self) -> (&mut Self::Type, ChildrenMut<T>) {
         self.inner.both()
     }
 }

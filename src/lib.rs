@@ -9,7 +9,10 @@ pub mod ref_unique;
 pub mod ref_mut;
 pub mod reference;
 pub mod ref_global;
-mod iter;
+pub mod iter;
+pub mod child_unique;
+pub mod children_mut;
+pub mod children_unique;
 
 #[cfg(test)]
 mod tests {
