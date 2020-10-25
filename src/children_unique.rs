@@ -1,5 +1,5 @@
 use crate::iter::ChildIter;
-use crate::reference::Ref;
+use crate::reference::{Ref, TreeRef};
 use crate::ref_mut::RefMut;
 use crate::child_unique::ChildUniq;
 
@@ -33,5 +33,8 @@ impl<'a, T: 'static> ChildrenUnique<'a, T> {
     }
     pub fn add_child(&mut self, value: T) -> ChildUniq<T> {
         self.inner.add_child(value)
+    }
+    pub fn count(&self) -> u32 {
+        self.inner.children_count()
     }
 }
