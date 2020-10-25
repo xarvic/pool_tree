@@ -3,7 +3,7 @@ use crate::iter::ChildIter;
 use crate::reference::{TreeRef, Ref};
 use crate::tree::Tree;
 use crate::children_unique::ChildrenUnique;
-use std::ops::DerefMut;
+use std::ops::{DerefMut, Deref, Receiver};
 use crate::children_mut::ChildrenMut;
 
 pub struct ChildUniq<'a, T>{
@@ -35,7 +35,78 @@ impl<'a, T: 'static> ChildUniq<'a, T> {
             (value, (&mut*this).get_children_unique())
         }
     }
+    pub fn clear_children(&mut self) {
+        unsafe{
+            let buffer = self.buffer;
+
+            for child_index in self.raw_mut().childs.drain(..) {
+
+                ChildUniq::create(child_index.get(), buffer).clear_children();
+
+                (&mut*buffer).free(child_index);
+            }
+        }
+    }
+    pub fn add_child(&mut self, value: T) -> ChildUniq<T> {
+        unsafe {
+            let index = (*self.buffer).alloc_for(value, self.index);
+            self.raw_mut().children_mut().push(index);
+
+            ChildUniq::create(self.buffer, index.get())
+        }
+    }
+
+    pub fn remove_child(&mut self, index: u32) -> T {
+        unsafe {
+            let buffer = self.buffer;
+            let childs = self.raw_mut().children_mut();
+            if childs.len() > index as usize {
+
+                let id = childs.remove(index as usize);
+
+                ChildUniq::create(id.get(), buffer).clear_children();
+
+                (&mut*self.buffer).free(id)
+            } else {
+                panic!("Index out of Bounds!")
+            }
+        }
+    }
+
+
+    pub fn into_child(self, index: u32) -> Result<Self, Self> {
+        unsafe {
+            if let Some(index) = self.raw().childs().get(index as usize) {
+                Ok(ChildUniq::create(index.get(), self.buffer))
+            } else {
+                Err(self)
+            }
+        }
+    }
+
+    pub fn into_new_child(mut self, value: T) -> Self {
+        unsafe { ChildUniq::from_inner(self.add_child(value)) }
+    }
+
 }
+
+impl<'a, T> Deref for ChildUniq<'a, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &*self.inner
+    }
+}
+
+
+impl<'a, T> DerefMut for ChildUniq<'a, T> {
+
+    fn deref_mut(&mut self) -> &Self::Target {
+        &mut *self.inner
+    }
+}
+
+impl<'a, T> Receiver for ChildUniq<'a, T>
 
 impl<'a, T: 'static> TreeRefMut for ChildUniq<'a, T> {
     fn children_mut(&mut self) -> ChildrenMut<T> {
